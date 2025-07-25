@@ -80,20 +80,26 @@ serve(async (req) => {
       // Generate job ID
       const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       
-      // Create job record
+      // Create job record with initial progress
       await blink.db.conversionJobs.create({
         id: jobId,
         userId: user.id,
         fileName: `upload_${Date.now()}.pdf`,
         status: 'processing',
-        progress: 0,
+        progress: 5, // Start with 5% to show immediate activity
         createdAt: new Date().toISOString()
       })
 
       // Simulate PDF processing with progress updates (in real implementation, you would use a PDF library)
       const processConversion = async () => {
         try {
+          console.log(`Starting conversion for job ${jobId}`)
+          
+          // Small delay to ensure job is created
+          await new Promise(resolve => setTimeout(resolve, 200))
+          
           // Update progress to 25%
+          console.log(`Updating progress to 25% for job ${jobId}`)
           await blink.db.conversionJobs.update(jobId, {
             progress: 25,
             status: 'processing'
@@ -103,6 +109,7 @@ serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, 800))
 
           // Update progress to 50%
+          console.log(`Updating progress to 50% for job ${jobId}`)
           await blink.db.conversionJobs.update(jobId, {
             progress: 50
           })

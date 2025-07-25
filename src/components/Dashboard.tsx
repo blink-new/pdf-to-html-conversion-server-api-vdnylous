@@ -111,6 +111,7 @@ export function Dashboard() {
       }
 
       const jobId = result.jobId
+      console.log(`Started conversion job: ${jobId}`)
 
       // Poll for completion and progress updates
       const pollStatus = async () => {
@@ -126,8 +127,10 @@ export function Dashboard() {
           if (statusResult.success && statusResult.job) {
             const job = statusResult.job
             
-            // Update progress from backend
-            setProgress(job.progress || 0)
+            // Update progress from backend - ensure it's never 0 if job exists
+            const currentProgress = Math.max(job.progress || 0, 5) // Minimum 5% to show activity
+            console.log(`Job ${jobId} progress: ${job.progress}% -> displaying: ${currentProgress}%`)
+            setProgress(currentProgress)
             
             if (job.status === 'completed') {
               // Ensure we show 100% completion
@@ -156,11 +159,11 @@ export function Dashboard() {
             } else if (job.status === 'failed') {
               throw new Error(job.errorMessage || 'Conversion failed')
             } else {
-              // Still processing, continue polling
-              setTimeout(pollStatus, 800)
+              // Still processing, continue polling more frequently
+              setTimeout(pollStatus, 500)
             }
           } else {
-            // If we can't get status, continue polling
+            // If we can't get status, continue polling but less frequently
             setTimeout(pollStatus, 1000)
           }
         } catch (error) {
@@ -176,8 +179,8 @@ export function Dashboard() {
         }
       }
 
-      // Start polling after a short delay
-      setTimeout(pollStatus, 2000)
+      // Start polling immediately to catch early progress updates
+      setTimeout(pollStatus, 500)
 
     } catch (error) {
       console.error('Conversion failed:', error)
