@@ -90,9 +90,23 @@ serve(async (req) => {
         createdAt: new Date().toISOString()
       })
 
-      // Simulate PDF processing (in real implementation, you would use a PDF library)
-      setTimeout(async () => {
+      // Simulate PDF processing with progress updates (in real implementation, you would use a PDF library)
+      const processConversion = async () => {
         try {
+          // Update progress to 25%
+          await blink.db.conversionJobs.update(jobId, {
+            progress: 25,
+            status: 'processing'
+          })
+
+          // Simulate processing delay
+          await new Promise(resolve => setTimeout(resolve, 800))
+
+          // Update progress to 50%
+          await blink.db.conversionJobs.update(jobId, {
+            progress: 50
+          })
+
           // Mock HTML conversion result
           const htmlContent = `
             <div class="pdf-content">
@@ -152,6 +166,14 @@ serve(async (req) => {
             }
           `
 
+          // Update progress to 75%
+          await blink.db.conversionJobs.update(jobId, {
+            progress: 75
+          })
+
+          // Simulate more processing
+          await new Promise(resolve => setTimeout(resolve, 600))
+
           // Create complete HTML file
           const completeHtml = `
             <!DOCTYPE html>
@@ -168,6 +190,11 @@ serve(async (req) => {
             </html>
           `
 
+          // Update progress to 90%
+          await blink.db.conversionJobs.update(jobId, {
+            progress: 90
+          })
+
           // Upload HTML file to storage
           const htmlBlob = new Blob([completeHtml], { type: 'text/html' })
           const htmlFile = new File([htmlBlob], `${jobId}.html`, { type: 'text/html' })
@@ -178,7 +205,7 @@ serve(async (req) => {
             { upsert: true }
           )
 
-          // Update job status
+          // Final completion - update to 100%
           await blink.db.conversionJobs.update(jobId, {
             status: 'completed',
             progress: 100,
@@ -197,7 +224,10 @@ serve(async (req) => {
             errorMessage: 'Conversion failed: ' + error.message
           })
         }
-      }, 2000) // Simulate processing time
+      }
+
+      // Start processing asynchronously
+      processConversion()
 
       return new Response(JSON.stringify({
         success: true,

@@ -101,10 +101,11 @@ serve(async (req) => {
           id: job.id,
           fileName: job.fileName,
           status: job.status,
-          progress: job.progress,
+          progress: job.progress || 0,
           createdAt: job.createdAt,
           completedAt: job.completedAt,
           htmlUrl: job.htmlUrl,
+          cssContent: job.cssContent,
           errorMessage: job.errorMessage
         }
       }), {

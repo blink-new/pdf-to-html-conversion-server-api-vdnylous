@@ -112,12 +112,7 @@ export function Dashboard() {
 
       const jobId = result.jobId
 
-      // Start progress polling
-      const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + Math.random() * 10, 90))
-      }, 500)
-
-      // Poll for completion
+      // Poll for completion and progress updates
       const pollStatus = async () => {
         try {
           const statusResponse = await fetch(`https://vdnylous--pdf-status.functions.blink.new/${jobId}`, {
@@ -131,8 +126,11 @@ export function Dashboard() {
           if (statusResult.success && statusResult.job) {
             const job = statusResult.job
             
+            // Update progress from backend
+            setProgress(job.progress || 0)
+            
             if (job.status === 'completed') {
-              clearInterval(progressInterval)
+              // Ensure we show 100% completion
               setProgress(100)
               
               // Create result for preview
@@ -144,26 +142,37 @@ export function Dashboard() {
                 downloadUrl: job.htmlUrl || ''
               }
               
-              setCurrentResult(conversionResult)
-              setIsProcessing(false)
-              await loadConversionHistory()
+              setTimeout(() => {
+                setCurrentResult(conversionResult)
+                setIsProcessing(false)
+                loadConversionHistory()
 
-              toast({
-                title: "Conversion Complete!",
-                description: `Successfully converted ${file.name} to HTML`,
-              })
+                toast({
+                  title: "Conversion Complete!",
+                  description: `Successfully converted ${file.name} to HTML`,
+                })
+              }, 300)
               
             } else if (job.status === 'failed') {
-              clearInterval(progressInterval)
               throw new Error(job.errorMessage || 'Conversion failed')
             } else {
               // Still processing, continue polling
-              setTimeout(pollStatus, 1000)
+              setTimeout(pollStatus, 800)
             }
+          } else {
+            // If we can't get status, continue polling
+            setTimeout(pollStatus, 1000)
           }
         } catch (error) {
-          clearInterval(progressInterval)
-          throw error
+          console.error('Status polling error:', error)
+          setIsProcessing(false)
+          setProgress(0)
+          
+          toast({
+            title: "Conversion Failed",
+            description: error instanceof Error ? error.message : "There was an error converting your PDF file",
+            variant: "destructive"
+          })
         }
       }
 
